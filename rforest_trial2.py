@@ -4,20 +4,16 @@ import numpy as np
 
 pd.set_option('display.max_rows', None)
 
-# Load your dataset with timestamps
 data = pd.read_csv('bitcoin_transactions_with_timestamps.csv')
 
-# Feature engineering: Calculate total transaction amount, average transaction rate, and sender-receiver frequency
 data['total_transaction_amount'] = data.groupby(['sender'])['amount'].transform('sum')                                               
 data['total_sender_reciever_pair_transaction_amount'] = data.groupby(['sender','receiver'])['amount'].transform('sum')
 data['average_transaction_rate'] = data['total_transaction_amount'] / data.groupby(['sender', 'receiver'])['amount'].transform('count')
 data['sender_receiver_frequency'] = data.groupby(['sender', 'receiver'])['timestamp'].transform('count')
 data['sender_frequency'] = data.groupby(['sender'])['timestamp'].transform('count')
 
-# Labeling: Create a column 'malicious' based on the criteria (e.g., >100 Bitcoin)
 data['malicious'] = (data['amount'] > 100).astype(int)
 
-data.to_csv('modified_data.csv')
 
 matplotlib.pyplot.scatter(data['timestamp'],data['amount'])
 matplotlib.pyplot.show()
@@ -38,4 +34,8 @@ for i in data['sender'].unique():
     lower_bound = q1-(1.5*iqr)
     outliers = data1[(data1['amount'] >= upper_bound)]
     print('The following are the outliers in the boxplot:\n{}'.format(outliers))
-    data['malicious'][] = (data['amount'] in outliers and data['sender']==i).astype(int)
+    for j in outliers.index:
+        data.at[j,'malicious']=1
+
+
+data.to_csv('modified_data.csv')
