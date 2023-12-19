@@ -17,8 +17,8 @@ Transaction timestamp: Consider the time and date of transactions. Detect unusua
 times, such as transactions happening only during certain hours or days.----NO
 Time since last transaction: Calculate the time gap between transactions. Malicious accounts may 
 exhibit irregular transaction patterns.
-Network Graph Features:
 
+Network Graph Features:
 Network analysis: Construct a graph of account interactions and analyze network properties such 
 as centrality, clustering coefficient, and degree distribution.
 Anomaly detection: Apply graph-based anomaly detection algorithms to identify accounts with 
@@ -126,4 +126,12 @@ all_scores=co.fetchall()
 for i in interacted_with_wallets:
     if all_scores[all_wallets.index(i)]>150:
         score+=1
-        
+
+#checking number of counterparties
+single_int=0
+for i in interacted_with_wallets_d:
+    if interacted_with_wallets_d[i]==[0,1] or interacted_with_wallets_d[i]==[1,0] or interacted_with_wallets_d[i]==[1,1]:
+        single_int+=1
+score+=single_int*single_int*100/len(interacted_with_wallets)
+
+#checking  gap between transactions
