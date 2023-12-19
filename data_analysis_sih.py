@@ -39,21 +39,27 @@ import numpy as np
 
 score=0
 
+'''
 data=requests.get('https://blockchain.info/rawaddr/bc1q7scj57g7m6w6a3hx8h4vvd47nj0yr063f3n3yu')
-print(data.json())
 d=data.json()
-print(type(data.json()))
+'''
+
+import json
+fo=open('wallet6_data.json','r')
+d=json.load(fo)
+fo.close()
+
 wallet=d['address']
 
 mo=m.connect(host='localhost',user='root',password='reha',database='sih_analysis_db')
 co=mo.cursor()
 co.execute('use sih_analysis_db')
 co.execute('select sd from common_data')
-sd=co.fetchone()
+sd=co.fetchone()[0]
 co.execute('select mean from common_data')
-mean=co.fetchone()
+mean=co.fetchone()[0]
 co.execute('select max_no_transactions from common_data')
-max_v=co.fetchone()
+max_v=co.fetchone()[0]
 
 #checking total number of transactions
 if d['n_tx']>(mean+sd):
@@ -81,8 +87,8 @@ for i in d['txs']:
             interacted_with_wallets.append(j['addr'])
             interacted_with_wallets_d[j['addr']]=[0,1]
         elif j['addr']!=wallet:
-            interacted_with_wallets_d[j['prev_out']['addr']][1]+=1
-    gas_list.append(d['fee'])
+            interacted_with_wallets_d[j['addr']][1]+=1
+    gas_list.append(i['fee'])
 #issue with getting number of transcations per unit time - what unit to take mainly
 
 #checking transaction amounts
@@ -92,16 +98,20 @@ q3 = np.quantile(amt_series, 0.75)
 iqr = q3-q1
 upper_bound = q3+(1.5*iqr)
 outliers = amt_series[(amt_series >= upper_bound)]
-score+=outliers.size()
+score+=outliers.size
 
 #checking reputation of counterparties
-co.execute('select wallet_id from wallet_score')
+co.execute('select walleet_id from wallet_score')
 all_wallets=co.fetchall()
+for i in range(len(all_wallets)):
+    all_wallets[i]= all_wallets[i][0]
 co.execute('select score from wallet_score')
 all_scores=co.fetchall()
+for i in range(len(all_scores)):
+    all_scores[i]= all_scores[i][0]
 for i in interacted_with_wallets:
     if i in all_wallets:
-        if all_scores[all_wallets.index(i)]>150:
+        if all_scores[all_wallets.index(i)]>7:
             score+=1
 
 #checking number of counterparties
@@ -109,30 +119,37 @@ single_int=0
 for i in interacted_with_wallets_d:
     if interacted_with_wallets_d[i]==[0,1] or interacted_with_wallets_d[i]==[1,0] or interacted_with_wallets_d[i]==[1,1]:
         single_int+=1
-score+=single_int*single_int*100/len(interacted_with_wallets)
+score+=single_int*single_int*2/len(interacted_with_wallets)
 
 #checking gap between transactions
 time_sorted=time[:]
 time_sorted.sort()
-time_gaps=[]
-for i in range(len(time_sorted)-1):
-    time_gaps.append(time_sorted[i+1]-time_sorted[i])
-timegap_series=pd.Series(time_gaps)
-q1 = np.quantile(timegap_series, 0.25)
-q3 = np.quantile(timegap_series, 0.75)
-iqr = q3-q1
-upper_bound = q3+(1.5*iqr)
-lower_bound = q1-(1.5*iqr)
-outliers = timegap_series[(timegap_series >= upper_bound)|(timegap_series <= lower_bound)]
-score+=outliers.size()
+if len(time_sorted)>1:
+    time_gaps=[]
+    for i in range(len(time_sorted)-1):
+        time_gaps.append(time_sorted[i+1]-time_sorted[i])
+    timegap_series=pd.Series(time_gaps)
+    q1 = np.quantile(timegap_series, 0.25)
+    q3 = np.quantile(timegap_series, 0.75)
+    iqr = q3-q1
+    upper_bound = q3+(1.5*iqr)
+    lower_bound = q1-(1.5*iqr)
+    outliers = timegap_series[(timegap_series >= upper_bound)|(timegap_series <= lower_bound)]
+    score+=outliers.size
 
 #checking gas consumption
 co.execute('select threshold_gas from common_data')
-th_gas=co.fetchone()
+th_gas=co.fetchone()[0]
 for i in gas_list:
     if i>th_gas:
         score+=1
 
+if str(wallet) not in all_wallets:
+    co.execute('insert into wallet_score values(%s,%s)',(wallet,score))
+    mo.commit()
+else:
+    co.execute('update wallet_score set score=%s where walleet_id=%s',(score,wallet))
+    mo.commit()
 
 '''
 Machine Learning Models:----NO
@@ -145,7 +162,7 @@ Unsupervised learning: Consider unsupervised learning techniques, such as cluste
 accounts with similar behaviors.
 
 Historical Data:----NO
-Use historical blockchain data to create a time series of features, enabling the model to capture 
+Use historical blockchn data to create a time series of features, enabling the model to capture 
 evolving behavior patterns.
 
 External Data Sources:-----NO
