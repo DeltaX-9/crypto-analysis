@@ -100,8 +100,9 @@ all_wallets=co.fetchall()
 co.execute('select score from wallet_score')
 all_scores=co.fetchall()
 for i in interacted_with_wallets:
-    if all_scores[all_wallets.index(i)]>150:
-        score+=1
+    if i in all_wallets:
+        if all_scores[all_wallets.index(i)]>150:
+            score+=1
 
 #checking number of counterparties
 single_int=0
@@ -134,7 +135,7 @@ for i in gas_list:
 
 
 '''
-Machine Learning Models:
+Machine Learning Models:----NO
 Use supervised learning algorithms (e.g., decision trees, random forests, gradient boosting, 
 neural networks) to train a classification model with labeled data (malicious vs. non-malicious 
 accounts).
@@ -143,19 +144,19 @@ features for classification.
 Unsupervised learning: Consider unsupervised learning techniques, such as clustering, to group 
 accounts with similar behaviors.
 
-Historical Data:
+Historical Data:----NO
 Use historical blockchain data to create a time series of features, enabling the model to capture 
 evolving behavior patterns.
 
-External Data Sources:
+External Data Sources:-----NO
 Incorporate external data sources, such as known blacklisted addresses or information from threat 
 intelligence feeds, to enhance the model's accuracy.
 
-Behavioral Patterns:
+Behavioral Patterns:-----HOW?
 Identify behavioral patterns associated with known malicious accounts, such as pump-and-dump 
 schemes, Ponzi schemes, or phishing attacks.
 
-Validation and Testing:
+Validation and Testing:-----eh.
 Implement robust cross-validation and testing procedures to ensure the model's effectiveness and 
 generalizability.
 '''
