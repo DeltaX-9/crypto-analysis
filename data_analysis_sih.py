@@ -20,42 +20,16 @@ exhibit irregular transaction patterns.
 
 Network Graph Features:
 Network analysis: Construct a graph of account interactions and analyze network properties such 
-as centrality, clustering coefficient, and degree distribution.
+as centrality, clustering coefficient, and degree distribution. ----GRAPH CREATED IN 
+KNOWLEDGE GRAPH AND I DON'T KNOW HOW TO DO THE SECOND PART
 Anomaly detection: Apply graph-based anomaly detection algorithms to identify accounts with 
-unusual connectivity patterns.
+unusual connectivity patterns.----SAME AS ABOVE
 
 Blockchain-Specific Features:
 Smart contract interactions: Analyze whether an account interacts with smart contracts and the 
-types of contracts involved.
+types of contracts involved.---NO INFO ABOUT SMART CONTRACT AVAILABLE
 Gas consumption: Consider the amount of gas consumed by transactions. Unusually high gas 
 consumption can be a sign of malicious activities.
-
-
-
-Machine Learning Models:
-Use supervised learning algorithms (e.g., decision trees, random forests, gradient boosting, 
-neural networks) to train a classification model with labeled data (malicious vs. non-malicious 
-accounts).
-Feature selection: Employ techniques like feature selection to identify the most relevant 
-features for classification.
-Unsupervised learning: Consider unsupervised learning techniques, such as clustering, to group 
-accounts with similar behaviors.
-
-Historical Data:
-Use historical blockchain data to create a time series of features, enabling the model to capture 
-evolving behavior patterns.
-
-External Data Sources:
-Incorporate external data sources, such as known blacklisted addresses or information from threat 
-intelligence feeds, to enhance the model's accuracy.
-
-Behavioral Patterns:
-Identify behavioral patterns associated with known malicious accounts, such as pump-and-dump 
-schemes, Ponzi schemes, or phishing attacks.
-
-Validation and Testing:
-Implement robust cross-validation and testing procedures to ensure the model's effectiveness and 
-generalizability.
 '''
 
 import requests
@@ -91,6 +65,7 @@ time=[]
 amt=[]
 interacted_with_wallets=[]
 interacted_with_wallets_d={}
+gas_list=[]
 for i in d['txs']:
     time.append(i['time'])
     timevamt.append([i['time'],i['result']])
@@ -107,6 +82,7 @@ for i in d['txs']:
             interacted_with_wallets_d[j['addr']]=[0,1]
         elif j['addr']!=wallet:
             interacted_with_wallets_d[j['prev_out']['addr']][1]+=1
+    gas_list.append(d['fee'])
 #issue with getting number of transcations per unit time - what unit to take mainly
 
 #checking transaction amounts
@@ -134,4 +110,52 @@ for i in interacted_with_wallets_d:
         single_int+=1
 score+=single_int*single_int*100/len(interacted_with_wallets)
 
-#checking  gap between transactions
+#checking gap between transactions
+time_sorted=time[:]
+time_sorted.sort()
+time_gaps=[]
+for i in range(len(time_sorted)-1):
+    time_gaps.append(time_sorted[i+1]-time_sorted[i])
+timegap_series=pd.Series(time_gaps)
+q1 = np.quantile(timegap_series, 0.25)
+q3 = np.quantile(timegap_series, 0.75)
+iqr = q3-q1
+upper_bound = q3+(1.5*iqr)
+lower_bound = q1-(1.5*iqr)
+outliers = timegap_series[(timegap_series >= upper_bound)|(timegap_series <= lower_bound)]
+score+=outliers.size()
+
+#checking gas consumption
+co.execute('select threshold_gas from common_data')
+th_gas=co.fetchone()
+for i in gas_list:
+    if i>th_gas:
+        score+=1
+
+
+'''
+Machine Learning Models:
+Use supervised learning algorithms (e.g., decision trees, random forests, gradient boosting, 
+neural networks) to train a classification model with labeled data (malicious vs. non-malicious 
+accounts).
+Feature selection: Employ techniques like feature selection to identify the most relevant 
+features for classification.
+Unsupervised learning: Consider unsupervised learning techniques, such as clustering, to group 
+accounts with similar behaviors.
+
+Historical Data:
+Use historical blockchain data to create a time series of features, enabling the model to capture 
+evolving behavior patterns.
+
+External Data Sources:
+Incorporate external data sources, such as known blacklisted addresses or information from threat 
+intelligence feeds, to enhance the model's accuracy.
+
+Behavioral Patterns:
+Identify behavioral patterns associated with known malicious accounts, such as pump-and-dump 
+schemes, Ponzi schemes, or phishing attacks.
+
+Validation and Testing:
+Implement robust cross-validation and testing procedures to ensure the model's effectiveness and 
+generalizability.
+'''
